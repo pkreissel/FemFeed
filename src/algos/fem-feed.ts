@@ -60,6 +60,7 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
         ctx.cfg.serviceDid,
         ctx.didResolver,
       )
+      console.log(`[fem-feed] Request authenticated for DID: ${requesterDid}`)
     } catch (e) {
       console.warn('Failed to validate auth:', e)
     }
@@ -71,11 +72,18 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
       const session = await oauthClient.restore(requesterDid)
       if (session) {
         agent = new Agent(session)
+        console.log(`[fem-feed] Successfully restored OAuth session for ${requesterDid}`)
+      } else {
+        console.log(`[fem-feed] No active OAuth session found for ${requesterDid} in database`)
       }
     } catch (e) {
-      console.error('Failed to restore OAuth session for requester:', e)
+      console.error(`[fem-feed] Failed to restore OAuth session for requester ${requesterDid}:`, e)
     }
+  } else {
+    console.log('[fem-feed] Unauthenticated request, using global feed')
   }
+
+  console.log(`[fem-feed] Starting feed generation. Target limit: ${params.limit}, Cursor: ${params.cursor || 'none'}`)
 
   // 1. Fetch the discover (whats-hot) feed from AppView
   const feedUri = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot'
@@ -99,6 +107,7 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
     try {
       if (agent) {
         // Authenticated request via Agent!
+        console.log(`[fem-feed] Loop ${loopCount}: Fetching personalized whats-hot feed via OAuth Agent...`)
         const res = await agent.app.bsky.feed.getFeed({
           feed: feedUri,
           limit: 100,
@@ -110,6 +119,7 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
         }
       } else {
         // Unauthenticated fallback
+        console.log(`[fem-feed] Loop ${loopCount}: Fetching global whats-hot feed via unauthenticated fetch...`)
         const url = new URL('https://api.bsky.app/xrpc/app.bsky.feed.getFeed')
         url.searchParams.set('feed', feedUri)
         url.searchParams.set('limit', '100')
@@ -144,6 +154,7 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
     })
 
     const uniqueUsernames: string[] = Array.from(new Set(postAuthorPairs.map((p: any) => p.username as string)))
+    console.log(`[fem-feed] Loop ${loopCount}: Fetched ${appViewPosts.length} posts, ${uniqueUsernames.length} unique authors to classify.`)
 
     // 3. Batch embed usernames using Jina Embeddings API
     let embeddingMap: Record<string, number[]> = {}
@@ -178,6 +189,7 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
       break
     }
 
+    let loopAccepted = 0
     for (const pair of postAuthorPairs) {
       const emb = embeddingMap[pair.username]
       if (emb) {
@@ -185,14 +197,20 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
         // If score > 0, logistic regression classifies it as female
         if (score > 0) {
           finalFeed.push({ post: pair.postUri })
+          loopAccepted++
         }
       }
     }
 
+    console.log(`[fem-feed] Loop ${loopCount}: Retained ${loopAccepted} female-authored posts (Total so far: ${finalFeed.length}/${targetLimit})`)
+
     if (!currentCursor) {
+      console.log(`[fem-feed] Loop ${loopCount}: No more cursor from AppView, breaking loop.`)
       break
     }
   }
+
+  console.log(`[fem-feed] Finished processing. Returning ${finalFeed.length} posts to client.`)
 
   return {
     cursor: currentCursor,

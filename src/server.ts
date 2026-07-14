@@ -88,7 +88,11 @@ export class FeedGenerator {
     app.get('/login', async (req, res) => {
       try {
         const handle = req.query.handle as string
-        if (!handle) return res.status(400).send('Handle is required')
+        if (!handle) {
+          console.warn('[server] Login request missing handle')
+          return res.status(400).send('Handle is required')
+        }
+        console.log(`[server] Initiating OAuth login for handle: ${handle}`)
         const url = await oauthClient.authorize(handle, { scope: 'atproto rpc:app.bsky.feed.getFeed?aud=did:web:api.bsky.app#bsky_appview' })
         res.redirect(url.toString())
       } catch (e) {
@@ -99,8 +103,10 @@ export class FeedGenerator {
 
     app.get('/oauth/callback', async (req, res) => {
       try {
+        console.log('[server] Received OAuth callback request')
         const params = new URLSearchParams(req.url.split('?')[1])
         const { session } = await oauthClient.callback(params)
+        console.log(`[server] OAuth callback successful for DID: ${session.did}`)
         res.send(`
           <!DOCTYPE html>
           <html>
