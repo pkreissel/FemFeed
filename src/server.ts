@@ -50,7 +50,7 @@ export class FeedGenerator {
     app.use(server.xrpc.router)
     app.use(wellKnown(ctx))
 
-    app.get('/client-metadata.json', (req, res) => {
+    app.get(['/client-metadata.json', '/client-metadata-v2.json'], (req, res) => {
       res.json(oauthClient.clientMetadata)
     })
 
