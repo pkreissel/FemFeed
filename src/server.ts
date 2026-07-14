@@ -23,6 +23,7 @@ export class FeedGenerator {
 
   static create(cfg: Config) {
     const app = express()
+    app.set('trust proxy', true)
 
     const didCache = new MemoryCache()
     const didResolver = new DidResolver({

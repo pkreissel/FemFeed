@@ -18,6 +18,9 @@ export default function (server: Server, ctx: AppContext) {
         did: ctx.cfg.serviceDid,
         feeds,
       },
+      headers: {
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      },
     }
   })
 }
