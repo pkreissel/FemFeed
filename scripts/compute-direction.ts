@@ -12,19 +12,25 @@ if (!JINA_API_KEY) {
 }
 
 const maleWords = [
-  'he', 'him', 'his', 'himself',
-  'man', 'men', 'boy', 'boys',
-  'male', 'males',
-  'father', 'son', 'brother', 'husband', 'uncle',
-  'john', 'david', 'michael', 'robert', 'william'
+  // English
+  'he', 'him', 'his', 'himself', 'man', 'men', 'boy', 'boys', 'male', 'males', 'father', 'son', 'brother', 'husband', 'uncle', 'john', 'david', 'michael', 'robert', 'william',
+  // Spanish
+  'él', 'lo', 'suyo', 'hombre', 'hombres', 'niño', 'niños', 'masculino', 'padre', 'hijo', 'hermano', 'esposo', 'tío', 'juan', 'carlos', 'jose',
+  // French
+  'il', 'lui', 'sien', 'homme', 'hommes', 'garçon', 'garçons', 'masculin', 'père', 'fils', 'frère', 'mari', 'oncle', 'jean', 'pierre', 'michel',
+  // German
+  'er', 'ihm', 'sein', 'mann', 'männer', 'junge', 'jungen', 'männlich', 'vater', 'sohn', 'bruder', 'ehemann', 'onkel', 'johannes', 'thomas'
 ]
 
 const femaleWords = [
-  'she', 'her', 'hers', 'herself',
-  'woman', 'women', 'girl', 'girls',
-  'female', 'females',
-  'mother', 'daughter', 'sister', 'wife', 'aunt',
-  'mary', 'jennifer', 'linda', 'elizabeth', 'susan'
+  // English
+  'she', 'her', 'hers', 'herself', 'woman', 'women', 'girl', 'girls', 'female', 'females', 'mother', 'daughter', 'sister', 'wife', 'aunt', 'mary', 'jennifer', 'linda', 'elizabeth', 'susan',
+  // Spanish
+  'ella', 'la', 'suya', 'mujer', 'mujeres', 'niña', 'niñas', 'femenino', 'madre', 'hija', 'hermana', 'esposa', 'tía', 'maría', 'carmen', 'ana',
+  // French
+  'elle', 'sienne', 'femme', 'femmes', 'fille', 'filles', 'féminin', 'mère', 'sœur', 'épouse', 'tante', 'marie', 'jeanne', 'sophie',
+  // German
+  'sie', 'ihr', 'ihre', 'frau', 'frauen', 'mädchen', 'weiblich', 'mutter', 'tochter', 'schwester', 'ehefrau', 'tante', 'anna', 'laura'
 ]
 
 async function getEmbeddings(texts: string[]): Promise<number[][]> {
