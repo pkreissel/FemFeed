@@ -11,7 +11,7 @@ export const oauthClient = new NodeOAuthClient({
     client_name: 'Fem Feed Generator',
     client_id: publicUrl === 'https://example.com' 
       ? `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1:3000/oauth/callback')}&scope=${encodeURIComponent('atproto transition:generic')}` 
-      : `${publicUrl}/client-metadata.json`,
+      : `${publicUrl}/client-metadata.json?v=2`,
     client_uri: publicUrl,
     redirect_uris: [
       publicUrl === 'https://example.com' 
