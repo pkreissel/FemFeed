@@ -89,7 +89,7 @@ export class FeedGenerator {
       try {
         const handle = req.query.handle as string
         if (!handle) return res.status(400).send('Handle is required')
-        const url = await oauthClient.authorize(handle, { scope: 'atproto' })
+        const url = await oauthClient.authorize(handle, { scope: 'atproto transition:generic' })
         res.redirect(url.toString())
       } catch (e) {
         console.error('Login error', e)
