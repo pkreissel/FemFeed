@@ -26,4 +26,4 @@ EXPOSE 3000
 ENV NODE_ENV production
 
 # Run the compiled production JavaScript
-CMD ["node", "dist/src/index.js"]
+CMD ["node", "dist/index.js"]
