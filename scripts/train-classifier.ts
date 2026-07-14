@@ -20,7 +20,8 @@ const femaleExamples = [
   'marie', 'jeanne', 'sophie', 'lea', 'manon', 'camille',
   'anna', 'laura', 'hannah', 'sophia', 'leonie', 'sabine', 'susanne', 'petra', 'birgit', 'andrea', 'monika', 'martina', 'stefanie', 'katrin', 'anja', 'ursula', 'karin', 'heike', 'claudia', 'nicole', 'jutta', 'renate', 'ulrike', 'barbara', 'sylvia',
   'dorota', 'katarzyna', 'magdalena', 'agnieszka', 'rina',
-  'Olivia Sullivan', 'Jessica Zellers', 'Tina Smith', 'Deborah McDowell', 'Julia Sena', 'Alina Hagen', 'Tuuli Huhtilainen', 'Mari', 'Cally Beaton', 'Jaana'
+  'Olivia Sullivan', 'Jessica Zellers', 'Tina Smith', 'Deborah McDowell', 'Julia Sena', 'Alina Hagen', 'Tuuli Huhtilainen', 'Mari', 'Cally Beaton', 'Jaana',
+  'Emma', 'Mia', 'Hannah', 'Emilia', 'Sofia', 'Lina', 'Anna', 'Mila', 'Lea', 'Marie', 'Lena', 'Leonie', 'Amelie', 'Sophie', 'Johanna', 'Luisa', 'Clara', 'Charlotte', 'Mathilda', 'Nele', 'Leni', 'Sarah', 'Julia', 'Laura', 'Lisa', 'Katharina', 'Christina', 'Nadine', 'Melanie', 'Kerstin', 'Marion', 'Ute', 'Angelika', 'Brigitte', 'Alice', 'Eve', 'Grace', 'Chloe', 'Zoe', 'Lily'
 ]
 
 const maleExamples = [
@@ -33,7 +34,9 @@ const maleExamples = [
   'jean', 'pierre', 'michel', 'hugo', 'jules', 'enzo', 'arthur', 'nathan', 'mathis',
   'johannes', 'thomas', 'maximilian', 'paul', 'elias', 'ben', 'jonas', 'noah', 'stefan', 'andreas', 'frank', 'christian', 'jürgen', 'klaus', 'peter', 'dieter', 'uwe', 'matthias', 'bernd', 'heinz', 'werner', 'gerhard', 'martin', 'jörg', 'manfred',
   'matej', 'marek', 'jan', 'piotr', 'tomasz',
-  'Sean Marshall', 'Jim Musil Painter', 'Chris H.', 'Mikael A. Manninen', 'Dziadek Marek', 'Malcolm D.', 'David Bollero', 'João João'
+  'Sean Marshall', 'Jim Musil Painter', 'Chris H.', 'Mikael A. Manninen', 'Dziadek Marek', 'Malcolm D.', 'David Bollero', 'João João',
+  'Florian', 'Max', 'Class', 'Claas', 'Klaas',
+  'Lukas', 'Leon', 'Finn', 'Luis', 'Luca', 'Felix', 'Henry', 'Emil', 'Oskar', 'Anton', 'Philipp', 'Julian', 'Tom', 'Moritz', 'Julius', 'Jan', 'Tim', 'Timo', 'Tobias', 'Jens', 'Günter', 'Helmut', 'Karl', 'Hans', 'Rolf', 'Wolfgang', 'Arthur', 'Leo', 'Bruno', 'Emilian', 'Mats', 'Liam', 'Adam', 'Jack', 'Harry', 'Jacob', 'Charlie', 'George', 'Oscar', 'James', 'William'
 ]
 
 const neutralExamples = [
