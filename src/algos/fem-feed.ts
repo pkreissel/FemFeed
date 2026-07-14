@@ -6,17 +6,17 @@ import express from 'express'
 
 export const shortname = 'fem-feed'
 
-// Read precomputed male-female direction vector from direction.json
-let directionVector: number[] | null = null
+// Read trained logistic regression weights and bias
+let classifier: { w: number[], b: number } | null = null
 try {
-  const dirPath = path.join(process.cwd(), 'src/direction.json')
+  const dirPath = path.join(process.cwd(), 'src/classifier.json')
   if (fs.existsSync(dirPath)) {
-    directionVector = JSON.parse(fs.readFileSync(dirPath, 'utf8'))
+    classifier = JSON.parse(fs.readFileSync(dirPath, 'utf8'))
   } else {
-    console.warn(`direction.json not found at ${dirPath}. Please run npm run compute-direction first.`)
+    console.warn(`classifier.json not found at ${dirPath}. Please run npm run train-classifier first.`)
   }
 } catch (e) {
-  console.error('Failed to load direction vector:', e)
+  console.error('Failed to load classifier:', e)
 }
 
 function l2Normalize(vector: number[]): number[] {
@@ -44,8 +44,8 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
     return { feed: [] }
   }
 
-  if (!directionVector) {
-    console.error('direction.json is not loaded or missing. Run npm run compute-direction first.')
+  if (!classifier) {
+    console.error('classifier.json is not loaded or missing. Run npm run train-classifier first.')
     return { feed: [] }
   }
 
@@ -139,13 +139,12 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
       break
     }
 
-    // 4. Check each post author's username embedding against the direction vector
     for (const pair of postAuthorPairs) {
       const emb = embeddingMap[pair.username]
       if (emb) {
-        const similarity = dotProduct(emb, directionVector)
-        // If similarity > 0, it lies on the female side of the axis
-        if (similarity > 0) {
+        const score = dotProduct(emb, classifier.w) + classifier.b
+        // If score > 0, logistic regression classifies it as female
+        if (score > 0) {
           finalFeed.push({ post: pair.postUri })
         }
       }

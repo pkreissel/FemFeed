@@ -11,7 +11,7 @@
     "unpublishFeed": "ts-node scripts/unpublishFeedGen.ts",
     "start": "ts-node src/index.ts",
     "build": "tsc",
-    "compute-direction": "ts-node scripts/compute-direction.ts"
+    "train-classifier": "ts-node scripts/train-classifier.ts"
   },
   "dependencies": {
     "@atproto/api": "^0.13.28",
