@@ -10,15 +10,15 @@ export const oauthClient = new NodeOAuthClient({
   clientMetadata: {
     client_name: 'Fem Feed Generator',
     client_id: publicUrl === 'https://example.com' 
-      ? `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1:3000/oauth/callback')}&scope=${encodeURIComponent('atproto transition:generic')}` 
-      : `${publicUrl}/client-metadata-v2.json`,
+      ? `http://localhost?redirect_uri=${encodeURIComponent('http://127.0.0.1:3000/oauth/callback')}&scope=${encodeURIComponent('atproto rpc:app.bsky.feed.getFeed?aud=did:web:api.bsky.app#bsky_appview')}` 
+      : `${publicUrl}/client-metadata-v3.json`,
     client_uri: publicUrl,
     redirect_uris: [
       publicUrl === 'https://example.com' 
         ? 'http://127.0.0.1:3000/oauth/callback' 
         : `${publicUrl}/oauth/callback`
     ],
-    scope: 'atproto transition:generic',
+    scope: 'atproto rpc:app.bsky.feed.getFeed?aud=did:web:api.bsky.app#bsky_appview',
     grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
     token_endpoint_auth_method: 'none',
