@@ -3,6 +3,9 @@ import path from 'path'
 import { QueryParams } from '../lexicon/types/app/bsky/feed/getFeedSkeleton'
 import { AppContext } from '../config'
 import express from 'express'
+import { Agent } from '@atproto/api'
+import { oauthClient } from '../auth/oauth'
+import { validateAuth } from '../auth'
 
 export const shortname = 'fem-feed'
 
@@ -49,6 +52,31 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
     return { feed: [] }
   }
 
+  let requesterDid: string | undefined = undefined
+  if (req && req.headers.authorization) {
+    try {
+      requesterDid = await validateAuth(
+        req,
+        ctx.cfg.serviceDid,
+        ctx.didResolver,
+      )
+    } catch (e) {
+      console.warn('Failed to validate auth:', e)
+    }
+  }
+
+  let agent: Agent | undefined = undefined
+  if (requesterDid) {
+    try {
+      const session = await oauthClient.restore(requesterDid)
+      if (session) {
+        agent = new Agent(session)
+      }
+    } catch (e) {
+      console.error('Failed to restore OAuth session for requester:', e)
+    }
+  }
+
   // 1. Fetch the discover (whats-hot) feed from AppView
   const feedUri = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot'
   
@@ -62,28 +90,39 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
   const headers: Record<string, string> = {
     'Accept': 'application/json',
   }
-  if (req?.headers.authorization) {
-    headers['Authorization'] = req.headers.authorization
-  }
-
+  // Remove the authorization header from the raw fetch request since it's an AppView service JWT, not an access token
+  
   while (finalFeed.length < targetLimit && loopCount < MAX_LOOPS) {
     loopCount++
 
-    const url = new URL('https://api.bsky.app/xrpc/app.bsky.feed.getFeed')
-    url.searchParams.set('feed', feedUri)
-    url.searchParams.set('limit', '100') // fetch maximum allowed to get a good batch of posts to filter
-    if (currentCursor) {
-      url.searchParams.set('cursor', currentCursor)
-    }
-
     let feedData: any
     try {
-      const res = await (globalThis as any).fetch(url.toString(), { method: 'GET', headers })
-      if (!res.ok) {
-        const err = await res.text()
-        throw new Error(`Status ${res.status}: ${err}`)
+      if (agent) {
+        // Authenticated request via Agent!
+        const res = await agent.app.bsky.feed.getFeed({
+          feed: feedUri,
+          limit: 100,
+          cursor: currentCursor,
+        })
+        feedData = {
+          feed: res.data.feed,
+          cursor: res.data.cursor,
+        }
+      } else {
+        // Unauthenticated fallback
+        const url = new URL('https://api.bsky.app/xrpc/app.bsky.feed.getFeed')
+        url.searchParams.set('feed', feedUri)
+        url.searchParams.set('limit', '100')
+        if (currentCursor) {
+          url.searchParams.set('cursor', currentCursor)
+        }
+        const res = await (globalThis as any).fetch(url.toString(), { method: 'GET', headers })
+        if (!res.ok) {
+          const err = await res.text()
+          throw new Error(`Status ${res.status}: ${err}`)
+        }
+        feedData = await res.json()
       }
-      feedData = await res.json()
     } catch (e) {
       console.error('Failed to fetch Discover feed from AppView:', e)
       break
