@@ -1,5 +1,5 @@
 # Stage 1: Build the TypeScript application
-FROM node:20 AS builder
+FROM node:22 AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY src ./src
 RUN yarn build
 
 # Stage 2: Run the compiled JavaScript application
-FROM node:20 AS runner
+FROM node:22 AS runner
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ COPY src/classifier.json ./src/classifier.json
 
 EXPOSE 3000
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Run the compiled production JavaScript
 CMD ["node", "dist/index.js"]
