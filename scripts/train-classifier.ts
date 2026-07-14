@@ -18,7 +18,7 @@ const femaleExamples = [
   'mary', 'jennifer', 'linda', 'elizabeth', 'susan', 'olivia', 'jessica', 'tina', 'deborah', 'emma', 'sarah', 'emily', 'abigail', 'madison', 'chloe', 'mia', 'isabella',
   'maría', 'carmen', 'ana', 'sofia', 'camila', 'valeria', 'mariana', 'lucia', 'daniela',
   'marie', 'jeanne', 'sophie', 'lea', 'manon', 'camille',
-  'anna', 'laura', 'hannah', 'sophia', 'leonie',
+  'anna', 'laura', 'hannah', 'sophia', 'leonie', 'sabine', 'susanne', 'petra', 'birgit', 'andrea', 'monika', 'martina', 'stefanie', 'katrin', 'anja', 'ursula', 'karin', 'heike', 'claudia', 'nicole', 'jutta', 'renate', 'ulrike', 'barbara', 'sylvia',
   'dorota', 'katarzyna', 'magdalena', 'agnieszka', 'rina',
   'Olivia Sullivan', 'Jessica Zellers', 'Tina Smith', 'Deborah McDowell', 'Julia Sena', 'Alina Hagen', 'Tuuli Huhtilainen', 'Mari', 'Cally Beaton', 'Jaana'
 ]
@@ -31,7 +31,7 @@ const maleExamples = [
   'john', 'david', 'michael', 'robert', 'william', 'james', 'oliver', 'benjamin', 'elijah', 'lucas', 'mason', 'logan', 'alexander', 'ethan', 'jacob',
   'juan', 'carlos', 'jose', 'mateo', 'santiago', 'matias', 'sebastian', 'nicolas', 'samuel', 'diego',
   'jean', 'pierre', 'michel', 'hugo', 'jules', 'enzo', 'arthur', 'nathan', 'mathis',
-  'johannes', 'thomas', 'maximilian', 'paul', 'elias', 'ben', 'jonas', 'noah',
+  'johannes', 'thomas', 'maximilian', 'paul', 'elias', 'ben', 'jonas', 'noah', 'stefan', 'andreas', 'frank', 'christian', 'jürgen', 'klaus', 'peter', 'dieter', 'uwe', 'matthias', 'bernd', 'heinz', 'werner', 'gerhard', 'martin', 'jörg', 'manfred',
   'matej', 'marek', 'jan', 'piotr', 'tomasz',
   'Sean Marshall', 'Jim Musil Painter', 'Chris H.', 'Mikael A. Manninen', 'Dziadek Marek', 'Malcolm D.', 'David Bollero', 'João João'
 ]
