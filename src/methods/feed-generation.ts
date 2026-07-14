@@ -34,7 +34,7 @@ export default function (server: Server, ctx: AppContext) {
       encoding: 'application/json',
       body: body,
       headers: {
-        'Cache-Control': 'public, max-age=60, s-maxage=60',
+        'Cache-Control': 'no-cache',
       },
     }
   })
