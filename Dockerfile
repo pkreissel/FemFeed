@@ -18,8 +18,8 @@ COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --production
 
 COPY --from=builder /app/dist ./dist
-# Copy direction.json so it is resolved at runtime
-COPY src/direction.json ./src/direction.json
+# Copy classifier.json so it is resolved at runtime
+COPY src/classifier.json ./src/classifier.json
 
 EXPOSE 3000
 
