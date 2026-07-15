@@ -22,7 +22,11 @@ const femaleExamples = [
   'anna', 'laura', 'hannah', 'sophia', 'leonie', 'sabine', 'susanne', 'petra', 'birgit', 'andrea', 'monika', 'martina', 'stefanie', 'katrin', 'anja', 'ursula', 'karin', 'heike', 'claudia', 'nicole', 'jutta', 'renate', 'ulrike', 'barbara', 'sylvia',
   'dorota', 'katarzyna', 'magdalena', 'agnieszka', 'rina',
   'Olivia Sullivan', 'Jessica Zellers', 'Tina Smith', 'Deborah McDowell', 'Julia Sena', 'Alina Hagen', 'Tuuli Huhtilainen', 'Mari', 'Cally Beaton', 'Jaana',
-  'Emma', 'Mia', 'Hannah', 'Emilia', 'Sofia', 'Lina', 'Anna', 'Mila', 'Lea', 'Marie', 'Lena', 'Leonie', 'Amelie', 'Sophie', 'Johanna', 'Luisa', 'Clara', 'Charlotte', 'Mathilda', 'Nele', 'Leni', 'Sarah', 'Julia', 'Laura', 'Lisa', 'Katharina', 'Christina', 'Nadine', 'Melanie', 'Kerstin', 'Marion', 'Ute', 'Angelika', 'Brigitte', 'Alice', 'Eve', 'Grace', 'Chloe', 'Zoe', 'Lily'
+  'Emma', 'Mia', 'Hannah', 'Emilia', 'Sofia', 'Lina', 'Anna', 'Mila', 'Lea', 'Marie', 'Lena', 'Leonie', 'Amelie', 'Sophie', 'Johanna', 'Luisa', 'Clara', 'Charlotte', 'Mathilda', 'Nele', 'Leni', 'Sarah', 'Julia', 'Laura', 'Lisa', 'Katharina', 'Christina', 'Nadine', 'Melanie', 'Kerstin', 'Marion', 'Ute', 'Angelika', 'Brigitte', 'Alice', 'Eve', 'Grace', 'Chloe', 'Zoe', 'Lily',
+  // More German + international female first names (capitalized to match the
+  // first-name tokens produced at inference time).
+  'Rozaliya', 'Antje', 'Silke', 'Britta', 'Kirsten', 'Cordula', 'Franziska', 'Friederike', 'Gudrun', 'Ingrid', 'Iris', 'Jana', 'Kristin', 'Manuela', 'Marlene', 'Meike', 'Mieke', 'Nina', 'Pia', 'Ramona', 'Regina', 'Sandra', 'Simone', 'Sonja', 'Steffi', 'Tanja', 'Verena', 'Wiebke', 'Yvonne', 'Antonia', 'Bettina', 'Carola', 'Doris', 'Elke', 'Gabriele', 'Heidi', 'Helga', 'Jasmin', 'Judith', 'Kathrin', 'Katja', 'Lara', 'Maren', 'Marta', 'Miriam', 'Nadja', 'Rebecca', 'Sabrina', 'Svenja', 'Theresa', 'Vanessa', 'Fleur', 'Carol', 'Katie', 'Jess', 'Jenn', 'Jacqueline', 'Lunna',
+  'Chiara', 'Francesca', 'Giulia', 'Valentina', 'Alessia', 'Elena', 'Paola', 'Beatrice', 'Cristina', 'Pilar', 'Nuria', 'Aisha', 'Fatima', 'Zainab', 'Mariam', 'Noor'
 ]
 
 const maleExamples = [
@@ -37,14 +41,20 @@ const maleExamples = [
   'matej', 'marek', 'jan', 'piotr', 'tomasz',
   'Sean Marshall', 'Jim Musil Painter', 'Chris H.', 'Mikael A. Manninen', 'Dziadek Marek', 'Malcolm D.', 'David Bollero', 'João João',
   'Florian', 'Max', 'Class', 'Claas', 'Klaas',
-  'Lukas', 'Leon', 'Finn', 'Luis', 'Luca', 'Felix', 'Henry', 'Emil', 'Oskar', 'Anton', 'Philipp', 'Julian', 'Tom', 'Moritz', 'Julius', 'Jan', 'Tim', 'Timo', 'Tobias', 'Jens', 'Günter', 'Helmut', 'Karl', 'Hans', 'Rolf', 'Wolfgang', 'Arthur', 'Leo', 'Bruno', 'Emilian', 'Mats', 'Liam', 'Adam', 'Jack', 'Harry', 'Jacob', 'Charlie', 'George', 'Oscar', 'James', 'William'
+  'Lukas', 'Leon', 'Finn', 'Luis', 'Luca', 'Felix', 'Henry', 'Emil', 'Oskar', 'Anton', 'Philipp', 'Julian', 'Tom', 'Moritz', 'Julius', 'Jan', 'Tim', 'Timo', 'Tobias', 'Jens', 'Günter', 'Helmut', 'Karl', 'Hans', 'Rolf', 'Wolfgang', 'Arthur', 'Leo', 'Bruno', 'Emilian', 'Mats', 'Liam', 'Adam', 'Jack', 'Harry', 'Jacob', 'Charlie', 'George', 'Oscar', 'James', 'William',
+  // Common German + international male first names that were leaking through as
+  // false positives (Christoph, Malte, Arno, Fabio, Clemens ... were all absent).
+  'Christoph', 'Malte', 'Arno', 'Theo', 'Theodor', 'Fabio', 'Clemens', 'Kalle', 'Kai', 'Sven', 'Thorsten', 'Torsten', 'Dirk', 'Ralf', 'Ralph', 'Olaf', 'Nils', 'Niels', 'Lars', 'Björn', 'Marco', 'Marcel', 'Sascha', 'Dennis', 'Kevin', 'Patrick', 'Sebastian', 'Fabian', 'Dominik', 'Simon', 'Erik', 'Hendrik', 'Henrik', 'Gunnar', 'Rainer', 'Norbert', 'Volker', 'Wilhelm', 'Friedrich', 'Ludwig', 'Ernst', 'Otto', 'Kurt', 'Horst', 'Reinhard', 'Bernhard', 'Joachim', 'Ulrich', 'Lothar', 'Konrad', 'Ruprecht', 'Yves', 'Enrique', 'Anders', 'Oliver', 'Markus', 'Robert', 'Rick', 'Saul', 'Andrew', 'Brant', 'Malte',
+  'Ivan', 'Sergio', 'Alejandro', 'Miguel', 'Manuel', 'Francisco', 'Javier', 'Alberto', 'Pablo', 'Pedro', 'Rafael', 'Fernando', 'Ricardo', 'Matteo', 'Lorenzo', 'Giovanni', 'Giuseppe', 'Alessandro', 'Francesco', 'Paolo', 'Roberto', 'Antonio', 'Ahmed', 'Mohammed', 'Ali', 'Omar', 'Hassan', 'Yusuf', 'Ibrahim', 'Mustafa'
 ]
 
 const neutralExamples = [
   'NBC News', 'Forbes', 'The Verge', 'Mother Jones', 'Guardian US', 'ProPublica', 'Cheddar', 'The Washington Post', 'DIE ZEIT',
   'Skittles', 'Blue Wave', 'Digital Brain', 'Cats of Yore', 'Bichinhos Fofinhos', 'WeRateDogs', 'Climb To The Clouds',
   'gatos fazendo gatices', 'FLAVOR FLAV', 'Never Trump', 'Bananenflanke', 'Laserbrille',
-  'news', 'sports', 'weather', 'music', 'art', 'photography', 'tech', 'science', 'politics'
+  'news', 'sports', 'weather', 'music', 'art', 'photography', 'tech', 'science', 'politics',
+  // Generic words / org first-tokens seen leaking through as false positives.
+  'Chef', 'Team', 'Radio', 'Podcast', 'Daily', 'Report', 'Watch', 'Project', 'Institute', 'Foundation', 'Network', 'Studio', 'Collective', 'Magazine', 'Press', 'Reporter', 'Human Rights Watch', 'Internet Archive', 'Science Magazine', 'Der Volksverpetzer', 'abgeordnetenwatch', 'amaBhungane', 'cemas', 'FAU Erlangen'
 ]
 
 async function getEmbeddings(texts: string[]): Promise<number[][]> {
@@ -80,7 +90,10 @@ function sigmoid(z: number): number {
   return 1 / (1 + Math.exp(-z))
 }
 
-function trainLogisticRegression(X: number[][], y: number[], epochs: number = 2000, lr: number = 0.1) {
+// Mild L2 regularization, applied once per EPOCH (not per sample) so it doesn't
+// compound over epochs*samples into total weight collapse. Shrinks weights a
+// little each epoch to help generalize to unseen names without killing signal.
+function trainLogisticRegression(X: number[][], y: number[], epochs: number = 2000, lr: number = 0.1, lambda: number = 0.001) {
   const numFeatures = X[0].length
   const w = new Array(numFeatures).fill(0)
   let b = 0
@@ -93,11 +106,15 @@ function trainLogisticRegression(X: number[][], y: number[], epochs: number = 20
       }
       const pred = sigmoid(z)
       const error = pred - y[i]
-      
+
       b -= lr * error
       for (let j = 0; j < numFeatures; j++) {
         w[j] -= lr * error * X[i][j]
       }
+    }
+    // Once-per-epoch weight decay.
+    for (let j = 0; j < numFeatures; j++) {
+      w[j] -= lr * lambda * w[j]
     }
   }
   return { w, b }

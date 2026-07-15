@@ -10,9 +10,11 @@ import { firstName } from '../name'
 
 export const shortname = 'fem-feed'
 
-// Posts with a classifier score above this are kept as female-authored. 0 is the
-// logistic-regression decision boundary (p=0.5); raise it for higher precision
-// (fewer men leaking in), lower it for higher recall.
+// Posts with a classifier score above this are kept as female-authored. Kept at
+// the raw logistic-regression boundary (0) for precision: on real display names,
+// lowering it readmits borderline male handles/spellings (e.g. "Kålle", handle
+// "LightMikey") that score just below 0 — exactly the men-in-the-feed problem.
+// Raise toward +1 for even stricter precision, lower for more recall.
 const SCORE_THRESHOLD = 0
 
 // Cache normalized-name -> classifier score across pages and requests. Authors
