@@ -101,9 +101,18 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
     } catch (e) {
       console.error(`[fem-feed] Failed to restore OAuth session for requester ${requesterDid}:`, e)
     }
-  } else {
-    console.log('[fem-feed] Unauthenticated request, using global feed')
   }
+
+  // Only ever serve the personalized, authenticated Discover feed. If we couldn't
+  // establish an OAuth agent (no auth header, no stored session, or a failed
+  // restore), return nothing rather than silently falling back to the global
+  // unauthenticated feed — that fallback served logged-in users an unpersonalized,
+  // unfiltered feed, which is exactly what we want to avoid.
+  if (!agent) {
+    console.log('[fem-feed] No authenticated OAuth agent available; returning empty feed instead of the unauthenticated fallback.')
+    return { feed: [] }
+  }
+  const authedAgent = agent
 
   console.log(`[fem-feed] Starting feed generation. Target limit: ${params.limit}, Cursor: ${params.cursor || 'none'}`)
 
@@ -122,36 +131,42 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
   // the feed is genuinely sparse.
   const MAX_LOOPS = 8
 
-  const headers: Record<string, string> = {
-    'Accept': 'application/json',
-  }
-  // Remove the authorization header from the raw fetch request since it's an AppView service JWT, not an access token
-  
   const clf = classifier // captured non-null (guarded above) for the closures below
 
   type Page = { feed: any[]; cursor?: string }
 
-  // Fetch one page of Discover posts — authenticated when we have a session,
-  // else the public AppView. Returns null on failure so the caller can stop.
+  // A transient 400/timeout on one page fetch used to truncate the whole feed
+  // (the loop breaks on the first null page). Retry a couple of times with a
+  // short backoff so a single blip — throttling under concurrent load, a
+  // momentary gateway error — doesn't cut the request short.
+  const FETCH_RETRIES = 2
+  const RETRY_BASE_MS = 300
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+  // Fetch one page of the personalized Discover feed via the OAuth agent.
+  // Returns null only after exhausting retries, at which point we have no cursor
+  // to continue from and the caller stops.
   const fetchPage = async (cursor?: string): Promise<Page | null> => {
-    try {
-      if (agent) {
+    for (let attempt = 0; attempt <= FETCH_RETRIES; attempt++) {
+      try {
         console.log('[fem-feed] Fetching personalized whats-hot page via OAuth Agent...')
-        const res = await agent.app.bsky.feed.getFeed({ feed: feedUri, limit: PAGE_SIZE, cursor })
+        const res = await authedAgent.app.bsky.feed.getFeed({ feed: feedUri, limit: PAGE_SIZE, cursor })
         return { feed: res.data.feed, cursor: res.data.cursor }
+      } catch (e: any) {
+        // XRPCError carries .status/.error; log both so we can tell a real
+        // service rejection (e.g. a bad/too-deep cursor) apart from a gateway or
+        // throttle 400 (HTML body, no real error code).
+        const status = e?.status ?? e?.statusCode ?? 'n/a'
+        const detail = e?.error ?? e?.message ?? e
+        console.error(`[fem-feed] Failed to fetch Discover page (attempt ${attempt + 1}/${FETCH_RETRIES + 1}, status ${status}):`, detail)
+        if (attempt < FETCH_RETRIES) {
+          await sleep(RETRY_BASE_MS * (attempt + 1))
+          continue
+        }
+        return null
       }
-      console.log('[fem-feed] Fetching global whats-hot page via unauthenticated fetch...')
-      const url = new URL('https://api.bsky.app/xrpc/app.bsky.feed.getFeed')
-      url.searchParams.set('feed', feedUri)
-      url.searchParams.set('limit', String(PAGE_SIZE))
-      if (cursor) url.searchParams.set('cursor', cursor)
-      const res = await (globalThis as any).fetch(url.toString(), { method: 'GET', headers })
-      if (!res.ok) throw new Error(`Status ${res.status}: ${await res.text()}`)
-      return await res.json()
-    } catch (e) {
-      console.error('Failed to fetch Discover feed from AppView:', e)
-      return null
     }
+    return null
   }
 
   // Embed names via Jina; result is aligned to input order.
