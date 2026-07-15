@@ -6,8 +6,28 @@ import express from 'express'
 import { Agent } from '@atproto/api'
 import { oauthClient } from '../auth/oauth'
 import { validateAuth } from '../auth'
+import { firstName } from '../name'
 
 export const shortname = 'fem-feed'
+
+// Posts with a classifier score above this are kept as female-authored. 0 is the
+// logistic-regression decision boundary (p=0.5); raise it for higher precision
+// (fewer men leaking in), lower it for higher recall.
+const SCORE_THRESHOLD = 0
+
+// Cache normalized-name -> classifier score across pages and requests. Authors
+// repeat heavily on Discover (news orgs, popular accounts), so this avoids
+// re-embedding known names — cutting Jina calls, latency and cost, which is what
+// makes fetching more pages affordable. Bounded to cap memory.
+const NAME_CACHE_CAP = 50000
+const nameScoreCache = new Map<string, number>()
+function cacheScore(name: string, score: number) {
+  if (nameScoreCache.size >= NAME_CACHE_CAP) {
+    const oldest = nameScoreCache.keys().next().value
+    if (oldest !== undefined) nameScoreCache.delete(oldest)
+  }
+  nameScoreCache.set(name, score)
+}
 
 // Read trained logistic regression weights and bias
 let classifier: { w: number[], b: number } | null = null
@@ -92,119 +112,130 @@ export const handler = async (ctx: AppContext, params: QueryParams, req?: expres
   let currentCursor = params.cursor
   let finalFeed: { post: string }[] = []
   
-  let loopCount = 0
-  const MAX_LOOPS = 5 // prevent infinite loops, fetch up to 5 pages (500 items)
+  const PAGE_SIZE = 100 // AppView hard-caps app.bsky.feed.getFeed at 100 per call
+  // ~23% of Discover posts survive the female-author filter, so filling a full
+  // 100-post request needs ~5 pages; 8 gives headroom for low-pass stretches.
+  // The loop early-exits once targetLimit is reached, so typical requests
+  // (limit ~50) still finish in ~3 pages — extra pages only cost latency when
+  // the feed is genuinely sparse.
+  const MAX_LOOPS = 8
 
   const headers: Record<string, string> = {
     'Accept': 'application/json',
   }
   // Remove the authorization header from the raw fetch request since it's an AppView service JWT, not an access token
   
-  while (finalFeed.length < targetLimit && loopCount < MAX_LOOPS) {
-    loopCount++
+  const clf = classifier // captured non-null (guarded above) for the closures below
 
-    let feedData: any
+  type Page = { feed: any[]; cursor?: string }
+
+  // Fetch one page of Discover posts — authenticated when we have a session,
+  // else the public AppView. Returns null on failure so the caller can stop.
+  const fetchPage = async (cursor?: string): Promise<Page | null> => {
     try {
       if (agent) {
-        // Authenticated request via Agent!
-        console.log(`[fem-feed] Loop ${loopCount}: Fetching personalized whats-hot feed via OAuth Agent...`)
-        const res = await agent.app.bsky.feed.getFeed({
-          feed: feedUri,
-          limit: 100,
-          cursor: currentCursor,
-        })
-        feedData = {
-          feed: res.data.feed,
-          cursor: res.data.cursor,
-        }
-      } else {
-        // Unauthenticated fallback
-        console.log(`[fem-feed] Loop ${loopCount}: Fetching global whats-hot feed via unauthenticated fetch...`)
-        const url = new URL('https://api.bsky.app/xrpc/app.bsky.feed.getFeed')
-        url.searchParams.set('feed', feedUri)
-        url.searchParams.set('limit', '100')
-        if (currentCursor) {
-          url.searchParams.set('cursor', currentCursor)
-        }
-        const res = await (globalThis as any).fetch(url.toString(), { method: 'GET', headers })
-        if (!res.ok) {
-          const err = await res.text()
-          throw new Error(`Status ${res.status}: ${err}`)
-        }
-        feedData = await res.json()
+        console.log('[fem-feed] Fetching personalized whats-hot page via OAuth Agent...')
+        const res = await agent.app.bsky.feed.getFeed({ feed: feedUri, limit: PAGE_SIZE, cursor })
+        return { feed: res.data.feed, cursor: res.data.cursor }
       }
+      console.log('[fem-feed] Fetching global whats-hot page via unauthenticated fetch...')
+      const url = new URL('https://api.bsky.app/xrpc/app.bsky.feed.getFeed')
+      url.searchParams.set('feed', feedUri)
+      url.searchParams.set('limit', String(PAGE_SIZE))
+      if (cursor) url.searchParams.set('cursor', cursor)
+      const res = await (globalThis as any).fetch(url.toString(), { method: 'GET', headers })
+      if (!res.ok) throw new Error(`Status ${res.status}: ${await res.text()}`)
+      return await res.json()
     } catch (e) {
       console.error('Failed to fetch Discover feed from AppView:', e)
-      break
+      return null
     }
+  }
 
-    const appViewPosts = feedData.feed || []
-    currentCursor = feedData.cursor
-
-    if (appViewPosts.length === 0) {
-      break
-    }
-
-    // 2. Extract usernames/names to embed
-    const postAuthorPairs = appViewPosts.map((item: any) => {
-      return {
-        postUri: item.post.uri,
-        username: getUsernameToEmbed(item.post.author),
-      }
+  // Embed names via Jina; result is aligned to input order.
+  const embed = async (texts: string[]): Promise<(number[] | undefined)[]> => {
+    const response = await (globalThis as any).fetch('https://api.jina.ai/v1/embeddings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'jina-embeddings-v5-text-small', input: texts, task: 'classification' }),
     })
+    if (!response.ok) {
+      throw new Error(`Jina Embeddings API error: ${response.status} ${await response.text()}`)
+    }
+    const result = await response.json()
+    return texts.map((_t: string, i: number) => result.data[i]?.embedding)
+  }
 
-    const uniqueUsernames: string[] = Array.from(new Set(postAuthorPairs.map((p: any) => p.username as string)))
-    console.log(`[fem-feed] Loop ${loopCount}: Fetched ${appViewPosts.length} posts, ${uniqueUsernames.length} unique authors to classify.`)
-
-    // 3. Batch embed usernames using Jina Embeddings API
-    let embeddingMap: Record<string, number[]> = {}
-    try {
-      const response = await (globalThis as any).fetch('https://api.jina.ai/v1/embeddings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'jina-embeddings-v5-text-small',
-          input: uniqueUsernames,
-          task: 'classification',
-        }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Jina Embeddings API error: ${response.status} ${errorText}`)
-      }
-
-      const result = await response.json()
-      for (let i = 0; i < uniqueUsernames.length; i++) {
-        const emb = result.data[i]?.embedding
+  // Resolve classifier scores for a set of normalized names, embedding only the
+  // ones not already in the cross-request cache.
+  const scoreNames = async (names: string[]): Promise<Map<string, number>> => {
+    const scores = new Map<string, number>()
+    const missSet = new Set<string>()
+    for (const n of names) {
+      const cached = nameScoreCache.get(n)
+      if (cached !== undefined) scores.set(n, cached)
+      else missSet.add(n)
+    }
+    if (missSet.size > 0) {
+      const misses = Array.from(missSet)
+      const embs = await embed(misses)
+      for (let i = 0; i < misses.length; i++) {
+        const emb = embs[i]
         if (emb) {
-          embeddingMap[uniqueUsernames[i]] = l2Normalize(emb)
+          const score = dotProduct(l2Normalize(emb), clf.w) + clf.b
+          scores.set(misses[i], score)
+          cacheScore(misses[i], score)
         }
       }
+    }
+    return scores
+  }
+
+  // Prefetch the first page, then pipeline: while we classify page N, page N+1's
+  // fetch is already in flight, so per-page wall time is ~max(fetch, embed)
+  // instead of fetch+embed. Page fetches are cursor-chained and unavoidably
+  // sequential; only the embed step overlaps.
+  let pagePromise: Promise<Page | null> = fetchPage(currentCursor)
+
+  for (let loopCount = 1; loopCount <= MAX_LOOPS; loopCount++) {
+    const page = await pagePromise
+    if (!page) break
+    const posts: any[] = page.feed || []
+    currentCursor = page.cursor
+    if (posts.length === 0) break
+
+    // Kick off the next page fetch now, before spending time on embeddings.
+    const canFetchMore = loopCount < MAX_LOOPS && !!page.cursor && finalFeed.length < targetLimit
+    pagePromise = canFetchMore ? fetchPage(page.cursor) : Promise.resolve(null)
+
+    const pairs = posts.map((item: any) => ({
+      postUri: item.post.uri,
+      name: firstName(getUsernameToEmbed(item.post.author)),
+    }))
+    const uniqueNames = Array.from(new Set(pairs.map((p) => p.name)))
+    const toEmbed = uniqueNames.filter((n) => !nameScoreCache.has(n)).length
+    console.log(`[fem-feed] Loop ${loopCount}: Fetched ${posts.length} posts, ${uniqueNames.length} unique authors (${toEmbed} to embed, rest cached).`)
+
+    let scores: Map<string, number>
+    try {
+      scores = await scoreNames(uniqueNames)
     } catch (e) {
       console.error('Failed to embed usernames via Jina API:', e)
       break
     }
 
     let loopAccepted = 0
-    for (const pair of postAuthorPairs) {
-      const emb = embeddingMap[pair.username]
-      if (emb) {
-        const score = dotProduct(emb, classifier.w) + classifier.b
-        // If score > 0, logistic regression classifies it as female
-        if (score > 0) {
-          finalFeed.push({ post: pair.postUri })
-          loopAccepted++
-        }
+    for (const pair of pairs) {
+      const score = scores.get(pair.name)
+      if (score !== undefined && score > SCORE_THRESHOLD) {
+        finalFeed.push({ post: pair.postUri })
+        loopAccepted++
       }
     }
+    console.log(`[fem-feed] Loop ${loopCount}: Retained ${loopAccepted} female-authored posts (Total so far: ${finalFeed.length}/${targetLimit}).`)
 
-    console.log(`[fem-feed] Loop ${loopCount}: Retained ${loopAccepted} female-authored posts (Total so far: ${finalFeed.length}/${targetLimit})`)
-
-    if (!currentCursor) {
+    if (finalFeed.length >= targetLimit) break
+    if (!page.cursor) {
       console.log(`[fem-feed] Loop ${loopCount}: No more cursor from AppView, breaking loop.`)
       break
     }

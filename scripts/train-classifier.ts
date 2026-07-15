@@ -1,6 +1,7 @@
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
+import { normalizeName } from '../src/name'
 
 dotenv.config()
 
@@ -55,7 +56,9 @@ async function getEmbeddings(texts: string[]): Promise<number[][]> {
     },
     body: JSON.stringify({
       model: 'jina-embeddings-v5-text-small',
-      input: texts,
+      // Normalize the same way the feed handler does, so training and inference
+      // embed identically shaped strings.
+      input: texts.map(normalizeName),
       task: 'classification',
     }),
   })
