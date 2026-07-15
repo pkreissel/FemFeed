@@ -7,7 +7,7 @@ import feedGeneration from './methods/feed-generation'
 import describeGenerator from './methods/describe-generator'
 import { AppContext, Config } from './config'
 import wellKnown from './well-known'
-import { oauthClient } from './auth/oauth'
+import { oauthClient, OAUTH_SCOPE } from './auth/oauth'
 import { initDb } from './db/oauth'
 
 export class FeedGenerator {
@@ -50,7 +50,7 @@ export class FeedGenerator {
     app.use(server.xrpc.router)
     app.use(wellKnown(ctx))
 
-    app.get(['/client-metadata.json', '/client-metadata-v2.json', '/client-metadata-v3.json'], (req, res) => {
+    app.get(['/client-metadata.json', '/client-metadata-v2.json', '/client-metadata-v3.json', '/client-metadata-v4.json'], (req, res) => {
       res.json(oauthClient.clientMetadata)
     })
 
@@ -93,7 +93,7 @@ export class FeedGenerator {
           return res.status(400).send('Handle is required')
         }
         console.log(`[server] Initiating OAuth login for handle: ${handle}`)
-        const url = await oauthClient.authorize(handle, { scope: 'atproto rpc:app.bsky.feed.getFeed?aud=did:web:api.bsky.app#bsky_appview' })
+        const url = await oauthClient.authorize(handle, { scope: OAUTH_SCOPE })
         res.redirect(url.toString())
       } catch (e) {
         console.error('Login error', e)
